@@ -1,36 +1,36 @@
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
+// /api/ask.js
 export default async function handler(req, res) {
-  const { key, ask } = req.query;
-
-  // protect your API
-  if (key !== "mysecretkey") {
-    return res.status(401).json({ error: "Invalid API key" });
-  }
-
-  if (!ask) {
-    return res.status(400).json({ error: "Question missing" });
-  }
-
   try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are a helpful AI assistant." },
-        { role: "user", content: ask }
+    const { ask } = req.query;
+    const API_KEY = process.env.GEMINI_API_KEY;
+
+    if (!ask) {
+      return res.status(400).json({ error: "No prompt provided" });
+    }
+
+    // Build body for Gemini generateContent
+    const body = {
+      contents: [
+        { parts: [ { text: ask } ] }
       ]
-    });
+    };
 
-    res.json({
-      question: ask,
-      answer: response.choices[0].message.content
-    });
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": API_KEY
+        },
+        body: JSON.stringify(body)
+      }
+    );
 
-  } catch (err) {
-    res.status(500).json({ error: "AI error", details: err.message });
+    // Return the JSON response
+    const data = await response.json();
+    res.status(response.ok ? 200 : response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.toString() });
   }
 }
