@@ -1,9 +1,7 @@
 // /api/ask.js
-import fetch from "node-fetch"; // If using Node 18+, native fetch works
-// import OpenAI from "openai"; // Optional: if using official SDK
-
 export default async function handler(req, res) {
   try {
+    // Get the 'ask' query parameter
     const { ask } = req.query;
     const API_KEY = process.env.OPENAI_API_KEY;
 
@@ -19,7 +17,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo", // or "gpt-4"
+        model: "gpt-3.5-turbo",   // or "gpt-4"
         messages: [
           { role: "user", content: ask }
         ],
@@ -29,10 +27,11 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // Extract the AI reply
+    // Safely extract the AI reply
     const message = data?.choices?.[0]?.message?.content || "No response";
 
     res.status(response.ok ? 200 : response.status).json({ message });
+
   } catch (error) {
     res.status(500).json({ error: error.toString() });
   }
