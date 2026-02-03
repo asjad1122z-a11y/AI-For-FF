@@ -1,12 +1,20 @@
-// /api/ask.js
 export default async function handler(req, res) {
   try {
-    // Get the 'ask' query parameter
-    const { ask } = req.query;
-    const API_KEY = process.env.OPENAI_API_KEY;
+    const { ask, key } = req.query;
+
+    // Optional: simple key check if you want
+    const EXPECTED_KEY = "mysecretkey"; 
+    if (key !== EXPECTED_KEY) {
+      return res.status(401).json({ error: "Invalid API key in query" });
+    }
 
     if (!ask) {
       return res.status(400).json({ error: "No prompt provided" });
+    }
+
+    const API_KEY = process.env.OPENAI_API_KEY;
+    if (!API_KEY) {
+      return res.status(500).json({ error: "OpenAI API key not set" });
     }
 
     // Call OpenAI ChatCompletion API
@@ -17,17 +25,14 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",   // or "gpt-4"
-        messages: [
-          { role: "user", content: ask }
-        ],
+        model: "gpt-3.5-turbo", // or "gpt-4"
+        messages: [{ role: "user", content: ask }],
         temperature: 0.7
       })
     });
 
     const data = await response.json();
 
-    // Safely extract the AI reply
     const message = data?.choices?.[0]?.message?.content || "No response";
 
     res.status(response.ok ? 200 : response.status).json({ message });
